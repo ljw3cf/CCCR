@@ -7,7 +7,21 @@
 
 # 2. 구성도
 ![ex_screenshot](./LB.png)
-
++ 네트워크 구성
+  + NAT (192.168.122.0/24) 
+    + LB서버와 외부 네트워크 통신을 위해 구축
+    + 서버 ip : LB (192.168.122.10)
+  + Priv1 (192.168.123.0/24)
+    + 로드 밸런싱을 위한 LB와 WEB의 통신 네트워크
+    + 서버 ip : Web1 (192.168.123.20)
+                Web2(192.168.123.21)
+                LB (192.168.123.10)
+   + Priv2 (192.168.124.0/24)
+      + Web-DB 통신과 Storage서버의 디렉토리/블록 스토리지 제공을 위한 네트워크
+      + 서버 ip :Web1 (192.168.124.20)
+                Web2 (192.168.124.21)
+                Storage (192.168.124.30)
+                DB (192.168.124.40)
 + Load balancer
   + 웹서버 로드밸런싱을 담당하는 서버
   + 사용 소프트웨어
@@ -16,7 +30,7 @@
 + Web1 / Web2
   + Wordpress를 통해 웹서비스를 담당하는 서버
   + 사용 소프트웨어
-    +Apache / PHP / Wordpress
+    + Apache / PHP / Wordpress
   
 + Database
   + Wordpress에 필요한 DB가 작동하는 서버
@@ -37,7 +51,62 @@
 
 # 3. 실습 과정
 4.1 각 서버의 네트워크 구성
+  + Network Manager (nmcli / nmtui)를 통한 각 서버의 Network 구성
+  + Network 구성 후 ping 테스트 진행 (각 네트워크에 해당하는 interface 구분할 것!!!)
+    + e.g) Load balancer의 외부네트워크 및 Web1에 대한 ping 테스트
+      <pre>
+      <code>
+      [student@LB ~]$ sudo ping 8.8.8.8 -I eth0
+      [student@LB ~]$ sudo ping 192.168.123.20 -I eth1
+      </code>
+      </pre>
+       
 4.2 스토리지 서버 구성
+  + yum을 통해 nfs-utils / targetcli 설치
+      <pre>
+      <code>
+      [student@Storage ~]$ sudo yum install -y nfs-utils targetcli 
+      </code>
+      </pre>
+       
+  + nfs 설정
+    + 마운팅 대상 디렉토리 생성
+      <pre>
+      <code>
+      [student@Storage ~]$ mkdir /webcontent 
+      </code>
+      </pre>
+
+    + /etc/exports에 nfs 옵션 설정
+    
+      (**권한에 대한 nfs 옵션 디폴트 옵션은 root_squash이며, 클라이언트 root가 nfsnobody와 같은 사용자로 맵핑된다는 의미이다.
+         이는 nfs 클라이언트에 해당하는 web서버에서 권한 불일치로 인한 Apache 네트워크 오류를 초래할 수 있다.
+         이를 방지하기 위해 no_root_squash 옵션을 사용하여, 서버와 클라이언트 root사용자를 일치 시키도록 하자**)
+      <pre>
+      <code>
+      /webcontent   192.168.123.0/24(rw,sync,no_root_squash) 
+      </code>
+      </pre>
+  
+    + nfs-server 서비스 시작
+      <pre>
+      <code>
+      [student@Storage ~]$ sudo systemctl start nfs-server
+      [student@Storage ~]$ sudo systemctl enable nfs-server
+      </code>
+      </pre>
+
+    + nfs 관련 방화벽 설정
+      <pre>
+      <code>
+      [student@Storage ~]$ firewall-cmd --add-service=nfs --permanent
+      [student@Storage ~]$ firewall-cmd --add-service=rpc-bind --permanent
+      [student@Storage ~]$ firewall-cmd --add-serivce=mountd --permanent
+      </code>
+      </pre>
+      
+  + iSCSI 설정
+    + iSCSI 설정을 위해 targetcli 
 4.3 서비스 디렉토리 마운팅(Web Server/ DB Server)
 4.4 DB 서버 구성
 4.5 WEB 서버 구성
