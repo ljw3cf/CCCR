@@ -177,8 +177,68 @@
    
 4.3 서비스 디렉토리 마운팅(Web Server/ DB Server)
   + Web Server 마운트
-  
+    + 마운트 대상 디렉토리 (/var/www)를 생성한다.
+    
+    + mount 명령을 사용하여 storage서버 nfs설정 디렉토리에 대한 원격 마운트를 진행한다.
+    <pre>
+    <code>      
+    [student@SWeb1 ~]$sudo mount -o rw,sync 192.168.124.40:/webcontent /var/www
+   </code>
+   </pre>
+    
+    + fstab에 마운트 규칙을 입력한다.
+    
+    <pre>
+    <code>      
+    [student@Web1 ~]$vim /etc/fstab
+    ...
+    192.168.124.40:/webcontent /var/www nfs rw,sync 0 1
+    
+   </code>
+   </pre>    
+    
+    + Web2에서도 같은 방식으로 원격 마운트를 실시한다.
+    
+  + DB Server 마운트
+    + 마운트 대상 디렉토리(/var/lib/mysql)를 생성한다.
+    + storage 서버의 block store와 연결하기 위해 iscsi-initiator-utils 설치한다.
+    + iqn 설정을 위해 /etc/iscsi/intiatorname.iscsi에 DB Server의 iqn을 입력한다.
+    
+    <pre>
+    <code>      
+    [student@DB ~]$vim /etc/iscsi/intiatorname.iscsi
+    ...
+    InitiatorName=iqn.2020-06.com.example:database
+    
+   </code>
+   </pre>    
+   
+   + iscsi 서비스를 활성화 한다.
+
+   + iscsi 연결을 위해 target을 검색한 뒤, 타겟에 연결한다.
+    <pre>
+    <code>      
+    [student@DB ~]$iscsiadm -m discovery -t st -p 192.168.124.40
+    192.168.124.40,1 iqn.2020-06.com.example:storage
+    [student@DB ~]$iscsiadm -m node -T iqn.2020-06.com.example:storage -l
+    </pre>
+    </code>
+
+   + iscsi로 연결된 디바이스의 파티셔닝 / pvcreate / vgcreate / lvcreate 진행한다.
+     lv생성 후, /var/lib/mysql과 마운팅하고 fstab에 마운트 규칙도 추가해준다.
+    <pre>
+    <code>      
+    iscsi로 외부에서 연결된 마운트포인트는 fstab의 옵션에 _netdev를 꼭! 꼭!!! 꼭!!!!!!! 추가해주자
+    _netdev는 해당 마운트는 네트워크 이후에 진행하라는 옵션이다.
+    
+    보통 부팅시 마운트 이후 네트워크 연결을 진행한다.
+    상기 마운트포인트는 네트워크를 통해 연결된 마운트포인트이기 때문에, _netdev 옵션 없이 재부팅 시
+    마운트포인트 경로를 찾을 수 없어 emergency mode로 전환된다.
+    </pre>
+    </code>
+     
 4.4 DB 서버 구성
+  + 
 4.5 WEB 서버 구성
 4.6 LB 서버 구성
 4.7 LB 테스트
