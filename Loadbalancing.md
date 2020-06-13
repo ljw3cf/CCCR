@@ -201,7 +201,9 @@
     
   + DB Server 마운트
     + 마운트 대상 디렉토리(/var/lib/mysql)를 생성한다.
+    
     + storage 서버의 block store와 연결하기 위해 iscsi-initiator-utils 설치한다.
+    
     + iqn 설정을 위해 /etc/iscsi/intiatorname.iscsi에 DB Server의 iqn을 입력한다.
     <pre>
     <code>      
@@ -211,9 +213,10 @@
    </code>
    </pre>    
    
-   + iscsi 서비스를 활성화 한다.
+    + iscsi 서비스를 활성화 한다.
 
-   + iscsi 연결을 위해 target을 검색한 뒤, 타겟에 연결한다.
+    + iscsi 연결을 위해 target을 검색한 뒤, 타겟에 연결한다.
+    
     <pre>
     <code>      
     [student@DB ~]$iscsiadm -m discovery -t st -p 192.168.124.40
@@ -222,7 +225,7 @@
     </code>
     </pre>
     
-   + iscsi로 연결된 디바이스의 파티셔닝 / pvcreate / vgcreate / lvcreate 진행한다.
+    + iscsi로 연결된 디바이스의 파티셔닝 / pvcreate / vgcreate / lvcreate 진행한다.
      lv생성 후, /var/lib/mysql과 마운팅하고 fstab에 마운트 규칙도 추가해준다.
     
     ***iscsi로 외부에서 연결된 마운트포인트는 fstab의 옵션에 _netdev를 꼭! 꼭!!! 꼭!!!!!!! 추가해주자***
