@@ -45,8 +45,8 @@
                      Web2 : /var/www
     
   + iSCSI
-    + 대상 디바이스 - /dev/vdc
-    + 마운팅 포인트 - /var/lib/mysql
+    + target 디바이스 (iqn.2020-06.com.example:storage) - /dev/vdc 
+    + initiator 마운팅 포인트 (iqn-2020-06.com.example:database) - /var/lib/mysql 
     
 
 # 3. 실습 과정
@@ -69,6 +69,14 @@
       </code>
       </pre>
        
+    + target 서비스 시작
+    <pre>
+    <code>
+    [student@Storage ~]$ systemctl start target
+    [student@Storage ~]$ systemctl enable target
+    </code>
+    </pre>
+    
   + nfs 설정
     + 마운팅 대상 디렉토리 생성
       <pre>
@@ -77,14 +85,20 @@
       </code>
       </pre>
 
+    + /dev/vdb를 /webcontent와 마운트하고, fstab에 규칙을 적용한다.
+
     + /etc/exports에 nfs 옵션 설정
-    
+      /etc/exports 파일에 디렉토리의 경로, ACL, 옵션을 작성하고, exportfs -r 커맨드로 테이블 경로를 재지정한다.   
       (**권한에 대한 nfs 옵션 디폴트 옵션은 root_squash이며, 클라이언트 root가 nfsnobody와 같은 사용자로 맵핑된다는 의미이다.
          이는 nfs 클라이언트에 해당하는 web서버에서 권한 불일치로 인한 Apache 네트워크 오류를 초래할 수 있다.
          이를 방지하기 위해 no_root_squash 옵션을 사용하여, 서버와 클라이언트 root사용자를 일치 시키도록 하자**)
+         
       <pre>
       <code>
       /webcontent   192.168.123.0/24(rw,sync,no_root_squash) 
+    
+      [student@Storage ~]$ sudo exportfs -r
+    
       </code>
       </pre>
   
@@ -106,8 +120,62 @@
       </pre>
       
   + iSCSI 설정
-    + iSCSI 설정을 위해 targetcli 
+    + block 타입의 backstore 생성
+      <pre>
+      <code>
+      [student@Storage ~]$ targetcli
+      Warning: Could not load preferences file root/.targetcli/prefs.bin.
+      targetcli shell version 2.1.fb41
+      Copyright 2011-2013 by Datera, Inc and others.
+      For help on commands, type 'help'
+      
+      /> /backstores/block create name=vdc dev=/dev/vdc
+      Created block storage object vdc using /dev/vdc
+       
+      </code>
+      </pre>
+    
+    + iQN 주소 설정
+      <pre>
+      <code>
+      /> create wwn=iqn.2020-06.com.example:storage
+      Created target iqn.2020-06.com.example:storage.
+      Created TPG 1.
+      Global pref auto_add_default_portal=true
+      Created default portal listening on all IPs (0.0.0.0), port 3260.
+      </code>
+      </pre>
+    
+    + ACL 설정
+    <pre>
+    <code>
+    /> /iscsi/iqn.2020-06.com.example:storage/tpg1/acls create wwn=iqn.2020-06.com.example:database
+    Created Node ACL for iqn.2020-06.com.example:database
+   </code>
+   </pre>
+   
+   + LUN 설정
+    <pre>
+    <code>
+    /> /iscsi/iqn.2020-06.com.example:storage/tpg1/luns create storage_object=/backstores/block/vdc lun=lun=0
+    Created LUN 0.
+    Created LUN 0->0 mapping in node ACL iqn.2020-06.com.example:database
+   </code>
+   </pre>
+   
+   + target 서비스 재시작 및 방화벽 설정
+     변경사항 적용을 위해 target 서비스를 재시작하고, 타겟 포트 3260을 허용한다.
+    <pre>
+    <code>      
+    [student@Storage ~]$systemctl restart target
+    [student@Storage ~]$firewall-cmd --add-port=3260 --permanent
+    [student@Storage ~]$firewall-cmd --reload
+   </code>
+   </pre>
+   
 4.3 서비스 디렉토리 마운팅(Web Server/ DB Server)
+  + Web Server 마운트
+  
 4.4 DB 서버 구성
 4.5 WEB 서버 구성
 4.6 LB 서버 구성
