@@ -208,9 +208,9 @@
     [student@DB ~]$vim /etc/iscsi/intiatorname.iscsi
     ...
     InitiatorName=iqn.2020-06.com.example:database
-    
    </code>
    </pre>    
+   
    + iscsi 서비스를 활성화 한다.
 
    + iscsi 연결을 위해 target을 검색한 뒤, 타겟에 연결한다.
@@ -219,9 +219,9 @@
     [student@DB ~]$iscsiadm -m discovery -t st -p 192.168.124.40
     192.168.124.40,1 iqn.2020-06.com.example:storage
     [student@DB ~]$iscsiadm -m node -T iqn.2020-06.com.example:storage -l
-    </pre>
     </code>
-
+    </pre>
+    
    + iscsi로 연결된 디바이스의 파티셔닝 / pvcreate / vgcreate / lvcreate 진행한다.
      lv생성 후, /var/lib/mysql과 마운팅하고 fstab에 마운트 규칙도 추가해준다.
     
