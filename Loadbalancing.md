@@ -203,7 +203,6 @@
     + 마운트 대상 디렉토리(/var/lib/mysql)를 생성한다.
     + storage 서버의 block store와 연결하기 위해 iscsi-initiator-utils 설치한다.
     + iqn 설정을 위해 /etc/iscsi/intiatorname.iscsi에 DB Server의 iqn을 입력한다.
-    
     <pre>
     <code>      
     [student@DB ~]$vim /etc/iscsi/intiatorname.iscsi
@@ -212,7 +211,6 @@
     
    </code>
    </pre>    
-   
    + iscsi 서비스를 활성화 한다.
 
    + iscsi 연결을 위해 target을 검색한 뒤, 타겟에 연결한다.
@@ -228,10 +226,10 @@
      lv생성 후, /var/lib/mysql과 마운팅하고 fstab에 마운트 규칙도 추가해준다.
     <pre>
     <code>      
-    iscsi로 외부에서 연결된 마운트포인트는 fstab의 옵션에 _netdev를 꼭! 꼭!!! 꼭!!!!!!! 추가해주자
+    ***iscsi로 외부에서 연결된 마운트포인트는 fstab의 옵션에 _netdev를 꼭! 꼭!!! 꼭!!!!!!! 추가해주자***
     _netdev는 해당 마운트는 네트워크 이후에 진행하라는 옵션이다.
     
-    보통 부팅시 마운트 이후 네트워크 연결을 진행한다.
+    리눅스 부팅시 마운트 이후 네트워크 연결을 진행한다.
     상기 마운트포인트는 네트워크를 통해 연결된 마운트포인트이기 때문에, _netdev 옵션 없이 재부팅 시
     마운트포인트 경로를 찾을 수 없어 emergency mode로 전환된다.
     </pre>
