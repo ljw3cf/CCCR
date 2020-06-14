@@ -372,7 +372,87 @@
   
   + Wordpress 설치에 필요한 PHP 7 이상 버전을 설치한다.  하지만 Centos 7 기준 yum repository에 PHP 7 이상 버전은 없다.  
     따라서 remi라고 불리는 별도의 repository를 설치하여 PHP를 설치할 필요가 있다.  
+    
+  + 먼저 yum을 통해 remi의 의존성 패키지인 epel-release 패키지를 설치한다.
+  <pre>
+  <code>
+  [student@web1 ~]$ sudo yum install -y epel-release
+  </code>
+  </pre>
+  
+  + remi 공식사이트에서 centos7버전의 rpm 패키지를 다운받고, rpm을 통해 설치한다.
+  ![ex_screenshot](./remi.xcf)
+  > remi 공식사이트에서 centos7버전 remi 패키지 경로를 확인한다.
+   
+  + wget으로 remi rpm 패키지를 다운 받고, rpm으로 해당 패키지를 설치한다.
+   <pre>
+   <code>
+   [student@web1 ~]$ wget https://rpms.remirepo.net/enterprise/remi-release-7.rpm  
+   --2020-06-14 15:03:15--  https://rpms.remirepo.net/enterprise/remi-release-7.rpm  
+   Resolving rpms.remirepo.net (rpms.remirepo.net)... 195.154.241.117, 2001:bc8:33a1:100::1  
+   Connecting to rpms.remirepo.net (rpms.remirepo.net)|195.154.241.117|:443... connected.  
+   HTTP request sent, awaiting response... 200 OK  
+   Length: 20440 (20K) [application/x-rpm]  
+   Saving to: ‘remi-release-7.rpm’  
 
-4.6 LB 서버 구성
-  +
+   remi-release-7.rpm  100%[===================>]  19.96K  62.9KB/s    in 0.3s    
+
+   2020-06-14 15:03:24 (62.9 KB/s) - ‘remi-release-7.rpm’ saved [20440/20440]
+   
+   [student@web1 ~]$ rpm -i remi-release-7.rpm
+   warning: remi-release-7.rpm: Header V4 RSA/SHA256 Signature, key ID 5f11735a: NOKEY
+   </pre>
+   <code>
+ 
+  + yum repolist로 확인 시, remi repository는 remi-safe가 디폴트로 되어있다.  
+    /etc/yum.repos.d/ 에서 remi-safe.repo를 비활성화시키고, remi-php74.repos를 활성화시킨다.  
+    이후 yum으로 php 패키지와 php-mysql 모듈을 설치한다.
+    
+  + wordpress 공식사이트에서 wordpress 최신 패키지를 /var/www/html에 다운받는다.
+    이후 tar 커맨드로 압축을 풀어준다.
+    
+  + 웹브라우저에서 web1로 접속하여, db명, 사용자명, 패스워드, db서버 위치를 입력하고 wordpress를 설치한다.
+  
+  + web2도 같은 방식으로 httpd / php / wordpress를 설치한다.
+  
+   4.6 LB 서버 구성
+  + yum을 통해 haproxy 패키지를 설치한다.
+  <pre>
+  <code> 
+  [student@lb ~]$ sudo yum install -y haproxy
+  </code>
+  </pre>
+  
+  + /etc/haproxy/haproxy.cfg 파일을 수정하여, 80번 포트를 listen시켜준다. 그리고 web1, web2를 roundrobin 방식으로 loadbalacing 해준다.
+  <pre>
+  <code>
+  [student@lb ~]$ vim /etc/haproxy/haproxy.cfg 
+  ...
+  #---------------------------------------------------------------------  
+  # main frontend which proxys to the backends  
+  #---------------------------------------------------------------------  
+  frontend main   
+    bind *:80 (디폴트로 5000번으로 listen되어 있는데, 이를 80번으로 바꿔준다.)  
+    acl url_static       path_beg       -i /static /images /javascript /stylesheets  
+    acl url_static       path_end       -i .jpg .gif .png .css .js  
+    
+    use_backend static          if url_static
+    default_backend             app
+
+  #---------------------------------------------------------------------
+  # static backend for serving up images, stylesheets and such
+  #---------------------------------------------------------------------
+  backend static
+      balance     roundrobin
+      server      static 127.0.0.1:4331 check
+  
+  #---------------------------------------------------------------------
+  # round robin balancing between the various backends
+  #---------------------------------------------------------------------
+  backend app
+      balance     roundrobin
+      server  wwwl 192.168.123.20 (web1의 priv1 네트워크 ip)
+      server  www2 192.168.123.21 (web2의 priv2 네트워크 ip)
+  </code>
+  </pre>
 4.7 LB 테스트
