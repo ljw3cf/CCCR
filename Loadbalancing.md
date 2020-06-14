@@ -91,8 +91,8 @@
     
       /etc/exports 파일에 디렉토리의 경로, ACL, 옵션을 작성하고, exportfs -r 커맨드로 테이블 경로를 재지정한다.   
       
-      (**권한에 대한 nfs 옵션 디폴트 옵션은 root_squash이며, 클라이언트 root가 nfsnobody와 같은 사용자로 맵핑된다는 의미이다.
-         이는 nfs 클라이언트에 해당하는 web서버에서 권한 불일치로 인한 Apache 네트워크 오류를 초래할 수 있다.
+      (**권한에 대한 nfs 옵션 디폴트 옵션은 root_squash이며, 클라이언트 root가 nfsnobody와 같은 사용자로 맵핑된다는 의미이다.  
+         이는 nfs 클라이언트에 해당하는 web서버에서 권한 불일치로 인한 Apache 네트워크 오류를 초래할 수 있다.  
          이를 방지하기 위해 no_root_squash 옵션을 사용하여, 서버와 클라이언트 root사용자를 일치 시키도록 하자**)
          
       <pre>
@@ -239,7 +239,18 @@
     </pre>
     
 4.4 DB 서버 구성
-  + 
+  + Wordpress의 DB로 사용할 MariaDB를 설치한다.  
+    MariaDB는 yum으로 설치 가능하며, CentOS 7버전 기준 repository에 MariaDB 5버전이 등록되어 있다.  
+    
+    하지만 Wordpress는 설치를 위해 필요한 MariaDB는 10버전 이상이다.(Wordpress 10.4.3 기준)  
+    ![ex_screenshot](./requirement.xcf)
+    > Wordpress 공식홈페이지에서 확인한 요구사양.
+      PHP 7.3 이상 / MariaDB 10.1 
+    
+ 
+   
+  
+  
 4.5 WEB 서버 구성
   +
 4.6 LB 서버 구성
