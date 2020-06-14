@@ -324,11 +324,11 @@
    MariaDB [(none)]> use wordpress_db  
    Database changed  
   
-   MariaDB [(none)]> GRANT ALL PRIVILEGES ON wordpress_db TO \  
+   MariaDB [(wordpress_db)]> GRANT ALL PRIVILEGES ON wordpress_db TO \  
     -> 'wp-admin'@'192.168.124.20' IDENTIFIED BY 'dkagh1.';  
    Query OK, 0 rows affected (0.001 sec)  
 
-   MariaDB [(none)]> GRANT ALL PRIVILEGES ON wordpress_db TO \  
+   MariaDB [(wordpress_db)]> GRANT ALL PRIVILEGES ON wordpress_db TO \  
     -> 'wp-admin'@'192.168.124.21' IDENTIFIED BY 'dkagh1.';  
    Query OK, 0 rows affected (0.001 sec)  
 
@@ -338,9 +338,41 @@
    </code>
    </pre>
 
-    
 4.5 WEB 서버 구성
-  +
+  + yum을 통해 apache2 패키지(httpd)를 설치한다.
+  <pre>
+  <code>
+  [student@web1 ~]$ sudo install -y httpd
+  </code>
+  </pre>
+  
+  + httpd 서비스 및 http 포트(80)를 활성화한다.
+  <pre>
+  <code>
+  [student@web1 ~]$ sudo systemctl start httpd  
+  [student@web1 ~]$ sudo systemctl enable httpd  
+  [student@web1 ~]$ sudo firewall-cmd --add-service=http --permanent  
+  [student@web1 ~]$ sudo firewall-cmd --reload  
+  </code>
+  </pre>
+
+  + apache2가 xfs로 마운트된 디렉토리 및 외부네트워크의 db를 사용하기 위해, 관련 seboolean 규칙을 활성화한다.
+  <pre>
+  <code>
+  [student@web1 ~]$ getsebool -a | grep httpd  
+  ...  
+  httpd_can_network_connect_db --> off  
+  ...  
+  httpd_use_nfs --> off  
+  ...  
+  [student@web1 ~]$ sudo setsebool -P httpd_can_network_connect_db on
+  [student@web1 ~]$ sudo setsebool -P httpd_use_nfs on
+  </code>
+  </pre>
+  
+  + Wordpress 설치에 필요한 PHP 7 이상 버전을 설치한다.  하지만 Centos 7 기준 yum repository에 PHP 7 이상 버전은 없다.  
+    따라서 remi라고 불리는 별도의 repository를 설치하여 PHP를 설치할 필요가 있다.  
+
 4.6 LB 서버 구성
   +
 4.7 LB 테스트
