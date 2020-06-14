@@ -455,4 +455,30 @@
       server  www2 192.168.123.21 (web2의 priv2 네트워크 ip)
   </code>
   </pre>
-4.7 LB 테스트
+  
+  + haproxy 서비스 활성화 시켜준다.
+  <pre>
+  <code>
+  [student@lb ~]$ sudo systemctl start haproxy
+  [student@lb ~]$ sudo systemctl enable haproxy
+  </code>
+  </pre>
+
+  + 외부네트워크와 통신하기 위해 http 포트 활성화 시켜준다.  
+  <pre>
+  <code>
+  [student@lb ~]$ sudo firewall-cmd --add-service=http --permanent
+  [student@lb ~]$ sudo firewall-cmd --reload
+  </code>
+  </pre>
+
+  + lb ip로 wordpress 접속하여, 접속여부를 확인한다.  
+  
+  + web1, web2의 /var/log/httpd/access_log 확인하여, 제대로 loadbalancing 되고 있는지 확인한다.  
+  <pre>
+  <code>
+  [student@web1 ~]$ tail -f /var/log/httpd/access_log  
+  
+  [student@web2 ~]$ tail -f /var/log/httpd/access_log  
+  </code>
+  </pre>
