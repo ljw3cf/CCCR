@@ -256,7 +256,7 @@
   + 공식사이트의 안내에 따라 MariaDB 10.4 repository를 추가한다.
     <pre>
     <code>
-    [lee@db ~]$ vim /etc/yum.repos.d/mariadb.repo  
+    [student@db ~]$ vim /etc/yum.repos.d/mariadb.repo  
     ...  
     [mariadb]  
     name = MariaDB  
@@ -264,14 +264,81 @@
     gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB  
     gpgcheck=1  
       
-    [lee@db ~]$ yum repolist   
+    [student@db ~]$ yum repolist   
     MariaDB                                         149 kB/s | 503 kB     00:03  
     repo id                        repo name                                  status  
     AppStream                      CentOS-8 - AppStream                       5,318  
     BaseOS                         CentOS-8 - Base                            1,661  
     extras                         CentOS-8 - Extras                             20  
     mariadb                        MariaDB                                       80  
+    </code>
+    </pre>
+    
+    + yum을 통해 MariaDB 10.4를 설치한다.
+    <pre>
+    <code>
+    [student@db ~]$ sudo yum install MariaDB-server
+    </code>
+    </pre>
+    
+    + MariaDB 서비스 활성화하고, Web과 통신하기 위해 3306포트를 활성화한다.  
+    <pre>
+    <code>
+    [student@db ~]$ sudo systemctl start mariadb  
+    [student@db ~]$ sudo systemctl enable mariadb  
+    [student@db ~]$ sudo firewall-cmd --add-port=3306/tcp --permanent  
+    [student@db ~]$ sudo firewall-cmd --reload
+    </code>
+    </pre>
+    
+    + MariaDB에 Wordpress에 필요한 database와 사용자(Web1 및 Web2)를 추가한다.
+    <pre>
+    <code>
+    [student@db ~]$ sudo systemctl start mariadb  
+    [student@db ~]$ mysql -u root -p  
+    Enter password:   
+    Welcome to the MariaDB monitor.  Commands end with ; or \g.  
+    Your MariaDB connection id is 8  
+    Server version: 10.3.17-MariaDB MariaDB Server  
+      
+    Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.  
+      
+    Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.  
+      
+    MariaDB [(none)]> CREATE DATABASE wordpress_db;
+    Query OK, 1 row affected (0.002 sec)
 
+    MariaDB [(none)]> CREATE USER 'wp-admin'@'192.168.124.20' \  
+        -> IDENTIFIED BY 'dkagh1';  
+    Query OK, 0 rows affected (0.001 sec)  
+  
+    MariaDB [(none)]> CREATE USER 'wp-admin'@'192.168.124.21' \  
+        -> IDENTIFIED BY 'dkagh1';  
+    Query OK, 0 rows affected (0.001 sec)  
+    </code>  
+    </pre>  
+    
+   + Web1 및 Web2 사용자에게 Wordpress_db에 대한 모든 권한을 허용한다.
+   <pre>
+   <code>
+   MariaDB [(none)]> use wordpress_db  
+   Database changed  
+  
+   MariaDB [(none)]> GRANT ALL PRIVILEGES ON wordpress_db TO \  
+    -> 'wp-admin'@'192.168.124.20' IDENTIFIED BY 'dkagh1.';  
+   Query OK, 0 rows affected (0.001 sec)  
+
+   MariaDB [(none)]> GRANT ALL PRIVILEGES ON wordpress_db TO \  
+    -> 'wp-admin'@'192.168.124.21' IDENTIFIED BY 'dkagh1.';  
+   Query OK, 0 rows affected (0.001 sec)  
+
+   MariaDB [wordpress_db]> FLUSH PRIVILEGES  
+   Query OK, 0 rows affected (0.001 sec)  
+   
+   </code>
+   </pre>
+
+    
 4.5 WEB 서버 구성
   +
 4.6 LB 서버 구성
