@@ -242,15 +242,36 @@
   + Wordpress의 DB로 사용할 MariaDB를 설치한다.  
     MariaDB는 yum으로 설치 가능하며, CentOS 7버전 기준 repository에 MariaDB 5버전이 등록되어 있다.  
     
-    하지만 Wordpress는 설치를 위해 필요한 MariaDB는 10버전 이상이다.(Wordpress 10.4.3 기준)  
+    하지만 Wordpress는 설치를 위해 요구하는 MariaDB는 10버전 이상이다.(Wordpress 10.4.3 기준)  
     ![ex_screenshot](./requirement.xcf)
-    > Wordpress 공식홈페이지에서 확인한 요구사양.
-      PHP 7.3 이상 / MariaDB 10.1 
+    > Wordpress 공식홈페이지에서 확인한 요구사양.  
+      PHP 7.3 이상 / MariaDB 10.1 이상을 필요로 한다.
+    별도로 MariaDB 10 이상 버전을 설치할 필요가 있다.
     
- 
+ + MariaDB 공식사이트로 접속하여 MariaDB 10.4 설치방법을 확인한다.
+   ![ex_screenshot](./requirement.xcf)
+   > MariaDB 공식사이트에서 안내하는 MariaDB 10.4 설치방법.  
+     yum에 MariaDB repository를 추가하는 방식으로 진행된다.
    
-  
-  
+  + 공식사이트의 안내에 따라 MariaDB 10.4 repository를 추가한다.
+    <pre>
+    <code>
+    [lee@db ~]$ vim /etc/yum.repos.d/mariadb.repo  
+    ...  
+    [mariadb]  
+    name = MariaDB  
+    baseurl = http://yum.mariadb.org/10.4/centos7-amd64  
+    gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB  
+    gpgcheck=1  
+      
+    [lee@db ~]$ yum repolist   
+    MariaDB                                         149 kB/s | 503 kB     00:03  
+    repo id                        repo name                                  status  
+    AppStream                      CentOS-8 - AppStream                       5,318  
+    BaseOS                         CentOS-8 - Base                            1,661  
+    extras                         CentOS-8 - Extras                             20  
+    mariadb                        MariaDB                                       80  
+
 4.5 WEB 서버 구성
   +
 4.6 LB 서버 구성
