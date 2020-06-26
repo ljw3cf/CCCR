@@ -20,7 +20,7 @@ runcmd:
   - [ yum-config-manager, --enable, remi-php74 ]
   - [ yum,install, -y, php, php-mysql ]
   - [ wget, -P, /var/www/html, "https://wordpress.org/latest.tar.gz" ]
-  - [ tar, -xzvf, /var/www/html/latest.tar.gz ]
+  - [ tar, -xzvf, /var/www/html/latest.tar.gz, -C, /var/www/html/ ]
   - [ systemctl, start, httpd ]
   - [ systemctl, enable, httpd ]
   - [ firewall-offline-cmd, --add-service=http ]
