@@ -21,7 +21,7 @@ runcmd:
   - [yum,install, -y, php, php-mysql]
   - [cd, /var/www/html]
   - [wget, "https://wordpress.org/latest.tar.gz"]
-  - [tar, -xzvf latest.tar.gz]
+  - [tar, -xzvf latest.tar.gz, -C /var/www/html/]
   - [systemctl start httpd]
   - [systemctl enable httpd]
   - [firewall-offline-cmd --add-service=http]
