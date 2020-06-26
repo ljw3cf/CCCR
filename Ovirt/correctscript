@@ -1,0 +1,27 @@
+#cloud-config
+yum_repos:
+  MariaDB:
+    baseurl: http://yum.mariadb.org/10.5/centos7-amd64
+    name: MariaDB
+    enabled: true
+    gpgkey: https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+    gpgcheck : 1
+runcmd:
+  - [ yum, install, -y, httpd, wget, epel-release, yum-utils, MariaDB-server ]
+  - [ systemctl, start, mariadb ]
+  - [ systemctl, enable, mariadb ]
+  - [ mysql, -u, root, -e, "CREATE DATABASE wordpress_db" ]
+  - [ mysql, -u, root, -e, "CREATE USER 'wp-admin'@'localhost' IDENTIFIED BY 'dkagh1.'" ]
+  - [ mysql, -u, root, -e, "GRANT ALL PRIVILEGES ON wordpress_db.* TO 'wp-admin'@'localhost' IDENTIFIED BY 'dkagh1.'" ]
+  - [ mysql, -u, root, -e, "FLUSH PRIVILEGES" ]
+  - [ wget, -P, /root, "https://rpms.remirepo.net/enterprise/remi-release-7.rpm" ]
+  - [ rpm, -i, /root/remi-release-7.rpm ]
+  - [ yum-config-manager, --disable, remi-safe ]
+  - [ yum-config-manager, --enable, remi-php74 ]
+  - [ yum,install, -y, php, php-mysql ]
+  - [ wget, -P, /var/www/html, "https://wordpress.org/latest.tar.gz" ]
+  - [ tar, -xzvf, /var/www/html/latest.tar.gz ]
+  - [ systemctl, start, httpd ]
+  - [ systemctl, enable, httpd ]
+  - [ firewall-offline-cmd, --add-service=http ]
+  - [ systemctl, restart, firewalld ]
