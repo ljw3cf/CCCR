@@ -8,19 +8,24 @@ docker network create net1
 
 # 2) Database 컨테이너 생성
 docker run -d --name db \
--v wp-db-vol:/var/lib/myql \
+-v wp-db-vol:/var/lib/mysql \
+--network net1 \
 -e MYSQL_ROOT_PASSWORD=dkagh1. \
 -e MYSQL_USER=wp-admin \
 -e MYSQL_PASSWORD=dkagh1. \
 -e MYSQL_DATABASE=wordpress_db \
---network net1 mariadb
+mariadb
 
-# 3) Wordpress 컨테이너 생성
+# 4) 인스턴스 생성 후 지연시간 설정
+sleep 1
+
+# 5) Wordpress 컨테이너 생성
 docker run -d --name wordpress \
 -v wp-web-vol:/var/www/html \
 --network net1 \
---link db \
--e WORDPRESS_DB_HOST=db \
+--link db \                          # db 컨테이너에 링크하여, 해당 ip를 컨테이너명으로 가져올 수 있도록 설정 
+-e WORDPRESS_DB_HOST=db \            # HOST에 컨테이너명을 지정하여 호스트 ip를 가져온다.
 -e WORDPRESS_DB_USER=wp-admin \
 -e WORDPRESS_DB_PASSWORD=dkagh1. \
--e WORDPRESS_DB_NAME=wordpress_db -p 8080:80 wordpress
+-e WORDPRESS_DB_NAME=wordpress_db \
+-p 80:80 wordpress                   # 외부에서 80번 포트로 접속시, 인스턴스 80번 포트로 통신할 수 있도록 설정
