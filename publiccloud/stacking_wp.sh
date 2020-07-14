@@ -16,7 +16,7 @@ docker run -d --name db \
 -e MYSQL_DATABASE=wordpress_db \
 mariadb
 
-# 4) 인스턴스 생성 후 지연시간 설정
+# 4) 인스턴스 생성 후 지연시간 설정 (wordpress 컨테이너 너무 빨리 생성되면 db랑 안붙더라...)
 sleep 1
 
 # 5) Wordpress 컨테이너 생성
