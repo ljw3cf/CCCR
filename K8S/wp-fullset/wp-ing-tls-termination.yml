@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: wp-ing-tls-term
+spec:
+  tls:
+    - hosts:
+        - wp.example.com
+      secretName: mynapp-tls-secret
+  rules:
+    - host: wp.example.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: wp-svc
+              servicePort: 80                                      

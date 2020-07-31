@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-deploy
+  labels:
+    app: wp-deploy
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 10
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wp-deploy
+  template:
+    metadata:
+      labels: 
+        app: wp-deploy
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: wp-deploy
+            topologyKey: "kubernetes.io/hostname"
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 10
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: mydb
+              topologyKey: "kubernetes.io/hostname"    
+      containers:
+        - name: wp-apps
+          image: wordpress
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mydb-0.mydb
+            - name: WORDPRESS_DB_USER
+              value: wp-admin
+            - name: WORDPRESS_DB_PASSWORD 
+              value: dkagh1.
+            - name: WORDPRESS_DB_NAME
+              value: wordpress_db
+          volumeMounts:
+            - name: wp-content
+              mountPath: /var/www/html
+          ports:
+            - name: wp-deploy-http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 10Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+      volumes:
+        - name: wp-content
+          persistentVolumeClaim:
+            claimName: wp-pvc-cephfs
