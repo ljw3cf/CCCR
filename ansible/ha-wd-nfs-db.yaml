@@ -30,22 +30,37 @@
       name: haproxy_connect_any
       state: yes 
       persistent: yes
-# haproxy 커맨드를 활용할 방법이 있을것... 방법을 모르겠다
   - name: set haproxy frontend port
     replace:
       path: /etc/haproxy/haproxy.cfg
-      regexp: \*:5000 
-      replace: \*:80
+      regexp: '\*:5000' 
+      replace: '*:80'
+  - name: add '#' before 'use backend static'
+    lineinfile:
+      path: /etc/haproxy/haproxy.cfg
+      regexp: 'use_backend static          if url_static'
+      insertbefore: 'default_backend             app'
+      line: '    #use_backend static          if url_static'
   - name: set haproxy backend host node2
     replace:
       path: /etc/haproxy/haproxy.cfg
       regexp: server  app1 127.0.0.1:5001 check
-      replace: server  www1 192.168.123.52
+      replace: server  www1 192.168.123.52 check
   - name: set haproxy backend host node3
     replace:
       path: /etc/haproxy/haproxy.cfg
       regexp: server  app2 127.0.0.1:5002 check
-      replace: server  www2 192.168.123.53
+      replace: server  www2 192.168.123.53 check
+  - name: delete default host 127.0.0.2:5003 
+    replace:
+      path: /etc/haproxy/haproxy.cfg
+      regexp: '    server  app3 127.0.0.1:5003 check'
+      replace: ''
+  - name: delete default host 127.0.0.1:5004 
+    replace:
+      path: /etc/haproxy/haproxy.cfg
+      regexp: '     server  app4 127.0.0.1:5004 check'
+      replace: '' 
   - name: start haproxy service
     service:
       name: haproxy
@@ -86,7 +101,7 @@
     lineinfile:
       path: /etc/exports
       insertafter: ''
-      line: '/wordpressdir  192.168.123.0/24(rw, sync, no_root_squash)'  
+      line: '/wordpressdir  192.168.123.0/24(rw,sync,no_root_squash)'  
   - name: Download wordpress
     get_url: 
       url: https://ko.wordpress.org/wordpress-5.3.4-ko_KR.tar.gz
@@ -167,8 +182,8 @@
   - name: Limit accessible hosts and Set port for db
     lineinfile:
       path: /etc/my.cnf.d/server.cnf
-      insertafter: [mysqld]
-      line: bind-address=192.168.123.52
+      insertafter: '\[mysqld\]'
+      line: 'bind-address=192.168.123.54'
   - name: Start mariadb
     service: 
       name: mariadb 
@@ -221,7 +236,7 @@
       immediate: yes
   - name: Active seboolean for mysql
     seboolean: 
-      name: allow_user_mysql_connect 
+      name: mysql_connect_any 
       state: yes 
       persistent: yes
 
@@ -229,40 +244,6 @@
   remote_user: student
   become: yes
   tasks:
-  - name: Install httpd
-    yum: 
-      name: httpd 
-      state: latest
-  - name: Open port 80
-    firewalld: 
-      service: http 
-      permanent: yes 
-      state: enabled 
-      immediate: yes
-  - name: Active seboolean for httpd  
-    seboolean: 
-      name: httpd_can_network_connect_db 
-      state: yes 
-      persistent: yes
-  - name: Active seboolean for nfs  
-    seboolean: 
-      name: httpd_use_nfs
-      state: yes 
-      persistent: yes
-  - name: allow haproxyserver to access httpd
-    replace:
-      path: /etc/httpd/conf/httpd.conf
-      regexp: Listen 80
-      replace: Listen 192.168.123.51:80
-  - name: Install remi-release-7 for php74
-    yum: 
-      name: https://rpms.remirepo.net/enterprise/remi-release-7.rpm 
-      state: latest
-  - name: Install php and php-mysql 
-    yum: 
-      name: php,php-mysql 
-      enablerepo: remi-php74 
-      state: latest
   - name: Install nfs-utils for mount
     yum:
       name: nfs-utils
@@ -273,6 +254,40 @@
       src: 192.168.123.54:/wordpressdir
       fstype: nfs
       state: mounted
+  - name: Install httpd
+    yum: 
+      name: httpd 
+      state: latest
+  - name: Open port 80
+    firewalld: 
+      service: http 
+      permanent: yes 
+      state: enabled 
+      immediate: yes
+  - name: Active seboolean for httpd
+    seboolean:
+      name: httpd_can_network_connect
+      state: yes
+      persistent: yes
+  - name: Active seboolean for httpd  
+    seboolean: 
+      name: httpd_can_network_connect_db 
+      state: yes 
+      persistent: yes
+  - name: Active seboolean for nfs  
+    seboolean: 
+      name: httpd_use_nfs
+      state: yes 
+      persistent: yes
+  - name: Install remi-release-7 for php74
+    yum: 
+      name: https://rpms.remirepo.net/enterprise/remi-release-7.rpm 
+      state: latest
+  - name: Install php and php-mysql 
+    yum: 
+      name: php,php-mysql 
+      enablerepo: remi-php74 
+      state: latest
   - name: Start httpd
     service: 
       name: httpd 
