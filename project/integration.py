@@ -222,7 +222,12 @@ elif text[0:1] == 출석:
     cur.execute(select_student)
     table = cur.fetchall()     
     for student_data in table:
-        print(student_data)
+        Student_Id = student_data[0]
+        Student_Name = student_data[1]
+        Student_Class = student_data[2]
+        print(Student_Id)
+        print(Student_Name)
+        print(Student_Class)
     cur.close
     conn.close
 
