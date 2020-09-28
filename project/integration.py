@@ -1,4 +1,3 @@
-#강길씨를 위한 프레젠트
 import pyaudio
 import wave
 import time
@@ -7,6 +6,7 @@ import os
 import json
 import urllib
 import cv2
+import pymysql
 
 #녹음에 필요한 변수
 CHUNK = 1024
@@ -88,6 +88,7 @@ data = json.loads(open_json.read())
 text = data['results']['transcripts'][0]['transcript']
 print("Transcribe 결과 " + "\"" + text + "\"")
 
+#기능구분용 변수들
 등록 = "등"
 출석 = "출"
 퇴실 = "퇴"
@@ -101,6 +102,17 @@ rekognition = boto3.client('rekognition')
 collection_id = "cccr_collection"
 threshold = 90
 IMAGE_BUCKET = "cccr-image"
+
+#mariadb용 변수지정
+ENDPOINT = "test.cumohhkhvfrn.ap-northeast-1.rds.amazonaws.com"
+PORT = 3306
+USR = "admin"
+REGION = "ap-northeast-1"
+DBNAME = "ljw_test"
+DBPASS = "dkagh1.."
+rds = boto3.client('rds')
+conn = pymysql.connect(host = ENDPOINT, user=USR, passwd=DBPASS, port=PORT, database=DBNAME)
+cur = conn.cursor()
 
 #transcribe 결과에 따른 별도절차 진행
 if text[0:1] == 등록:
@@ -147,7 +159,27 @@ if text[0:1] == 등록:
         for reason in unindexedFace['Reasons']:
             print('   ' + reason)
     print('  당신의 Face ID는?: ' + faceRecord['Face']['FaceId'])
-    
+        
+    #학생정보 inserts
+    print('학생정보 DB Insert 시작')
+    add_student = ("INSERT INTO student "
+                   "(Name, FaceID, Class) "
+                   "VALUES (%(Name)s,%(FaceID)s,%(Class)s)")
+    Class = text[3:5]
+    Student_Name = text[6:]
+
+    data_student = {
+        "FaceID": FaceID,
+        "Name": Student_Name,
+        "Class": Class
+    }
+
+    cur.execute(add_student, data_student)
+    conn.commit()
+    cur.close()
+    conn.close()
+    print('학생정보 DB 등록 완료')   
+
 elif text[0:1] == 출석: 
     print("출석절차 진행...")
     print("사진촬영을 시작합니다.")
@@ -181,8 +213,18 @@ elif text[0:1] == 출석:
                                 
     print ('Matching faces')
     for match in search_faces['FaceMatches']:
-            print ('당신의 FaceId:' + match['Face']['FaceId'])
+            face_id = match['Face']['FaceId']
+            print ('당신의 FaceId: %s' % face_id)
             print ('원본 사진과 유사도: ' + "{:.2f}".format(match['Similarity']) + "%")
+    
+    # DB에서 해당하는 학생 검색
+    select_student = ("SELECT id,Name,Class from student where FaceID='%s'" % face_id) 
+    cur.execute(select_student)
+    table = cur.fetchall()     
+    for student_data in table:
+        print(student_data)
+    cur.close
+    conn.close
 
 elif text[0:1] == 퇴실:
     print("퇴실절차 진행...")
