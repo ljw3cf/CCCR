@@ -179,6 +179,7 @@ if text[0:1] == 등록:
     cur.close()
     conn.close()
     print('학생정보 DB 등록 완료')   
+
 elif text[0:1] == 출석: 
     print("출석절차 진행...")
     print("사진촬영을 시작합니다.")
@@ -189,7 +190,7 @@ elif text[0:1] == 출석:
             # 프레임 출력
             cv2.imshow('Camera Window', frame)
             if(int(cap.get(1)) % 1 == 0):
-                cv2.imwrite("./test%d.jpg" % count, frame)
+                cv2.imwrite("./%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count), frame)
                 count += 1
             # ESC를 누르면 종료
             if (count == 100): 
@@ -199,7 +200,7 @@ elif text[0:1] == 출석:
 
     # 이미지를 s3에 업로드
     count -= 1  
-    IMAGE_OUTPUT_FILENAME = "test%d.jpg" % count
+    IMAGE_OUTPUT_FILENAME = "%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count)
 
     print(IMAGE_OUTPUT_FILENAME)
     S3.upload_file(IMAGE_OUTPUT_FILENAME, IMAGE_BUCKET, IMAGE_OUTPUT_FILENAME)
@@ -225,24 +226,25 @@ elif text[0:1] == 출석:
         Student_Name = student_data[1]
         Student_Class = student_data[2]
         print("학생명은 " + Student_Name)
+    cur.close()
+    conn.close()
 
     # 출석 온도(라즈베리파이 온도측정기능 확인시 변경할 것)
     Check_In_Temp = 36.5
 
     # 여러 용도로 사용할 시스템타임의 변수처리 (형식: 년-월-일)
-    System_Time = time.strftime("%Y-%m-%d %H:%M:%S")
+    system_time = time.strftime("%Y-%m-%d", time.localtime())
 
     # 오늘 출석기록이 이미 존재하는가 확인
-    select_check_in = ("SELECT * FROM check_in_out WHERE studentID=%s " 
-                 "AND check_in_time LIKE '%s%%'" %(Student_Id,System_Time[:10]))
+    select_check_in = ("SELECT * WHERE studentID=%s "
+                 "AND check_in_time LIKE '%s%'" % (student_ID, system_time)
     check_in_result = cur.execute(select_check_in)
     # 출석기록 없을 떄 insert 처리
-    if check_in_result == 0:
-        add_check = ("INSERT INTO check_in_out  "
+    if select_in_result == 0:
+        add_check = ("INSERT INTO check_in_out "
                        "(check_in_time, check_in_temp, studentID) "
-                       "VALUES ('%s', '%f', '%s')" %(System_Time, Check_In_Temp, Student_Id))
+                       "VALUES (now,%f,%d)" % (Check_In_Temp, Student_Id))
         cur.execute(add_check)
-        conn.commit()
         print("출석기록이 db에 저장되었습니다.")
         cur.close
         conn.close
@@ -252,7 +254,7 @@ elif text[0:1] == 출석:
         conn.close
 
 elif text[0:1] == 퇴실:
-    print("퇴실절차 진행...")
+   print("퇴실절차 진행...")
     print("사진촬영을 시작합니다.")
     while cap.isOpened():
     # 카메라 프레임 읽기
@@ -261,7 +263,7 @@ elif text[0:1] == 퇴실:
             # 프레임 출력
             cv2.imshow('Camera Window', frame)
             if(int(cap.get(1)) % 1 == 0):
-                cv2.imwrite("./test%d.jpg" % count, frame)
+                cv2.imwrite("./%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count), frame)
                 count += 1
             # ESC를 누르면 종료
             if (count == 100): 
@@ -271,7 +273,7 @@ elif text[0:1] == 퇴실:
 
     # 이미지를 s3에 업로드
     count -= 1  
-    IMAGE_OUTPUT_FILENAME = "test%d.jpg" % count
+    IMAGE_OUTPUT_FILENAME = "%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count)
 
     print(IMAGE_OUTPUT_FILENAME)
     S3.upload_file(IMAGE_OUTPUT_FILENAME, IMAGE_BUCKET, IMAGE_OUTPUT_FILENAME)
@@ -297,16 +299,18 @@ elif text[0:1] == 퇴실:
         Student_Name = student_data[1]
         Student_Class = student_data[2]
         print("학생명은 " + Student_Name)
+    cur.close()
+    conn.close()
 
     # 출석 온도(라즈베리파이 온도측정기능 확인시 변경할 것)
     Check_In_Temp = 36.5
 
     # 여러 용도로 사용할 시스템타임의 변수처리 (형식: 년-월-일)
-    System_Time = time.strftime("%Y-%m-%d %H:%M:%S")
+    system_time = time.strftime("%Y-%m-%d", time.localtime())
 
     # 오늘 출석기록이 이미 존재하는가 확인
-    select_check_in = ("SELECT * FROM check_in_out WHERE studentID='%s' "
-                 "AND check_in_time LIKE '%s%%'" % (Student_Id, System_Time[:10]))
+    select_check_in = ("SELECT * WHERE studentID=%s "
+                 "AND check_in_time LIKE '%s%'" (student_ID, system_time)
     check_in_result = cur.execute(select_check_in)
     # 출석기록이 없는 경우
     if check_in_result == 0:
@@ -315,9 +319,9 @@ elif text[0:1] == 퇴실:
         conn.close()
     # 출석기록이 존재하는 경우
     else:
-        select_check_out = ("SELECT id FROM check_in_out WHERE studentID='%s' "
-                            "AND check_in_time LIKE '%s%%'"
-                            "AND check_out_time IS NULL" % (Student_Id, System_Time[:10]))
+        select_check_out = ("SELECT id * WHERE studentID=%s "
+                            "AND check_in_time LIKE '%s%'"
+                            "AND check_out_time IS NULL")
         check_out_result = cur.execute(select_check_out)
         # 출퇴기록이 존재하는 경우
         if check_out_result == 0:
@@ -325,14 +329,13 @@ elif text[0:1] == 퇴실:
         # 출석기록 존재하나, 퇴실기록 없는 경우
         else:
             select_id = cur.fetchall()
-            Check_Id = select_id[-1][0]
+            check_id = select_id[-1]
             Check_Out_Temp = 37.5
-            update_check = ("UPDATE check_in_out "
-                            "SET check_out_time = '%s',"
-                            "check_out_temp = '%f' "
-                            "WHERE id = '%d'" % (System_Time, Check_Out_Temp, Check_Id))
+            update_check = ("UPDATE check_in_out"
+                            "SET check_out_time = %s," % now
+                            "check_out_temp =%f" % Check_Out_Temp
+                            "WHERE id=%d" % check_id)
             cur.execute(update_check)
-            conn.commit()
             print("퇴실기록 등록이 완료되었습니다.")
             cur.close
             conn.close
