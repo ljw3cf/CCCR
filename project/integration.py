@@ -189,7 +189,7 @@ elif text[0:1] == 출석:
             # 프레임 출력
             cv2.imshow('Camera Window', frame)
             if(int(cap.get(1)) % 1 == 0):
-                cv2.imwrite("./test%d.jpg" % count, frame)
+                cv2.imwrite("./%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count), frame)
                 count += 1
             # ESC를 누르면 종료
             if (count == 100): 
@@ -199,7 +199,7 @@ elif text[0:1] == 출석:
 
     # 이미지를 s3에 업로드
     count -= 1  
-    IMAGE_OUTPUT_FILENAME = "test%d.jpg" % count
+    IMAGE_OUTPUT_FILENAME = "%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count)
 
     print(IMAGE_OUTPUT_FILENAME)
     S3.upload_file(IMAGE_OUTPUT_FILENAME, IMAGE_BUCKET, IMAGE_OUTPUT_FILENAME)
@@ -212,9 +212,9 @@ elif text[0:1] == 출석:
                                 
     print ('Matching faces')
     for match in search_faces['FaceMatches']:
-            face_id = match['Face']['FaceId']
-            print ('당신의 FaceId: %s' % face_id)
-            print ('원본 사진과 유사도: ' + "{:.2f}".format(match['Similarity']) + "%")
+        face_id = match['Face']['FaceId']
+        print ('당신의 FaceId: %s' % face_id)
+        print ('원본 사진과 유사도: ' + "{:.2f}".format(match['Similarity']) + "%")
     
     # DB에서 해당하는 학생정보 변수처리
     select_student = ("SELECT id,Name,Class from student where FaceID='%s'" % face_id) 
@@ -261,7 +261,7 @@ elif text[0:1] == 퇴실:
             # 프레임 출력
             cv2.imshow('Camera Window', frame)
             if(int(cap.get(1)) % 1 == 0):
-                cv2.imwrite("./test%d.jpg" % count, frame)
+                cv2.imwrite("./%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count), frame)
                 count += 1
             # ESC를 누르면 종료
             if (count == 100): 
@@ -271,7 +271,7 @@ elif text[0:1] == 퇴실:
 
     # 이미지를 s3에 업로드
     count -= 1  
-    IMAGE_OUTPUT_FILENAME = "test%d.jpg" % count
+    IMAGE_OUTPUT_FILENAME = "%s%d.jpg" % (MODIFIED_WAVE_OUTPUTNAME.replace(":", "-"), count)
 
     print(IMAGE_OUTPUT_FILENAME)
     S3.upload_file(IMAGE_OUTPUT_FILENAME, IMAGE_BUCKET, IMAGE_OUTPUT_FILENAME)
