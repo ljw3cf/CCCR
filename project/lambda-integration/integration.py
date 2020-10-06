@@ -127,10 +127,10 @@ if text[0:1] == 등록:
             # 프레임 출력
             cv2.imshow('Camera Window', frame)
             if(int(cap.get(1)) % 1 == 0):
-                cv2.imwrite("./IN-%s%d.jpg" % (System_Time.replace(":", "-"), count), frame)
+                cv2.imwrite("./%s%d.jpg" % (text, count), frame)
                 count += 1
             # ESC를 누르면 종료
-            if (count == 100): 
+            if (count == 101): 
                 break
     cap.release()
     cv2.destroyAllWindows()    
