@@ -12,11 +12,19 @@ from botocore.exceptions import BotoCoreError, ClientError
 from contextlib import closing
 from tempfile import gettempdir
 
+#녹음에 필요한 변수
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 44100
+RECORD_SECONDS = 5
+
 # 여러 용도로 사용할 시스템타임의 변수처리 (형식: 년-월-일-시-분-초)
 System_Time = time.strftime("%Y-%m-%d-%H-%M-%S")
 WAVE_OUTPUT_FILENAME =  System_Time + ".wav"
 
 #S3 사용하기 위한 변수들
+S3 = boto3.client("s3")
 BUCKET_NAME = "transcriberecord"
 
 #transcribe용 변수 지정
@@ -24,14 +32,65 @@ transcribe = boto3.client('transcribe')
 job_uri = "https://transcriberecord.s3-ap-northeast-1.amazonaws.com/"+ WAVE_OUTPUT_FILENAME
 job_name = WAVE_OUTPUT_FILENAME
 
+#pyaudio 라이브러리로 녹음데이터를 frames에 떄려박는 함수들
+p = pyaudio.PyAudio()
+
+#polly 함수지정
+def speech(pollytext):
+    polly = boto3.client("polly")
+    try:
+        response = polly.synthesize_speech(Text=pollytext, OutputFormat="mp3", VoiceId="Seoyeon")
+    except (BotoCoreError, ClientError) as error:
+       print(error)
+       sys.exit(-1)
+
+    if "AudioStream" in response:
+        with closing(response["AudioStream"]) as stream:
+            #mp3 파일 저장위치 지정
+            output = os.path.join(gettempdir(), "speech.mp3")
+            try:
+                with open(output, "wb") as file:
+                    file.write(stream.read())
+            except IOError as error:
+                print(error)
+                sys.exit(-1)
+    else:
+        print("응답에 오디오 데이터가 포함되지않아 오디오를 스트리밍 할 수 없습니다.")
+        sys.exit(-1)
+
+    opener = "open" if sys.platform == "darwin" else "xdg-open"
+    subprocess.call([opener, output])        
+
 speech("원하는 기능을 말씀해주세요. %d 초 동안 녹음이 시작됩니다." % RECORD_SECONDS) 
 time.sleep(5)
 os.system('play -nq -t alsa synth {} sine {}'.format(0.5, 440))
 
+stream = p.open(format=FORMAT,
+                channels=CHANNELS,
+                rate=RATE,
+                input=True,
+                frames_per_buffer=CHUNK)
+frames = []
+
+for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+    data = stream.read(CHUNK)
+    frames.append(data)
+
 speech("녹음이 종료되었습니다. 음성인식이 완료될 떄 까지 잠시만 기다려주세요.") 
 
+stream.stop_stream()
+stream.close()
+p.terminate()
 
-#생성한 wav파일을 S3로 업로드 및 wav파일 삭제
+#저장된 프레임을 기반으로 wav파일 생성
+wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+wf.setnchannels(CHANNELS)
+wf.setsampwidth(p.get_sample_size(FORMAT))
+wf.setframerate(RATE)
+wf.writeframes(b''.join(frames))
+wf.close()
+
+#생성한 wav파일을 S3로 업로드
 S3.upload_file(WAVE_OUTPUT_FILENAME, BUCKET_NAME, WAVE_OUTPUT_FILENAME)
 print("S3 업로드 완료")
 time.sleep(3)
@@ -39,6 +98,8 @@ time.sleep(3)
 #S3 업로드 후 wav파일 삭제 
 os.remove(WAVE_OUTPUT_FILENAME)
 
+#transcribe 완료될 동안 메세지 표시...
+print(job_name)
 while True:
     status = transcribe.get_transcription_job(TranscriptionJobName=job_name)
     if status['TranscriptionJob']['TranscriptionJobStatus'] in ['COMPLETED', 'FAILED']:
@@ -46,6 +107,7 @@ while True:
     print("STT 진행 중... 끄지 마숑..")
     time.sleep(5)
 
+#transcribe 결과 표시
 open_json = urllib.request.urlopen(status['TranscriptionJob']['Transcript']['TranscriptFileUri'])
 data = json.loads(open_json.read())
 text = data['results']['transcripts'][0]['transcript']
