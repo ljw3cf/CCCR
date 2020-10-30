@@ -1,9 +1,0 @@
-#!/bin/bash
-
-aws rekognition create-stream-processor --name my-stream-processor\
-              --input '{"KinesisVideoStream":{"Arn":"arn:aws:kinesisvideo:ap-northeast-1:670205369612:stream/video-test/1601013014959"}}'\
-              --stream-processor-output '{"KinesisDataStream":{"Arn":"arn:aws:kinesis:ap-northeast-1:670205369612:stream/test-datastream"}}'\
-              --role-arn arn:aws:iam::670205369612:role/rekognition\
-              --settings '{"FaceSearch":{"CollectionId":"cccr_collection","FaceMatchThreshold":85.5}}'
-
-aws rekognition start-stream-processor --name my-stream-processor

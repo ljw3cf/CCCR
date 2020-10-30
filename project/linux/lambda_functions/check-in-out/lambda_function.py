@@ -10,18 +10,17 @@ import os
 def lambda_handler(event, context):
     #rekongnition용 변수지정
     REKOGNITION = boto3.client('rekognition')
-    COLLECTION_ID = "insert your collection ID!"
+    COLLECTION_ID = # Rekognition Collection ID 입력
     THRESHOLD = 90
-    IMAGE_BUCKET = "insert your bucket contain images!"
+    IMAGE_BUCKET = # 이미지를 저장할 S3 Bucket name 입력
     TRANSCRIBE = boto3.client('transcribe')
 
     #mariadb용 변수지정
-    ENDPOINT = "insert your mariadb endpoint!"
-    PORT = 3306
-    USR = "insert your mariadb user name!"
-    REGION = "insert your region!"
-    DBNAME = "insert your database name!"
-    DBPASS = "insert your database password!"
+    ENDPOINT = # RDBMS 엔드포인트 입력
+    PORT = 3306 # RDBMS가 3306외 다른 포트번호를 사용할 시 변경할 것
+    USR = # RDBMS Username 입력
+    DBNAME = # DB 이름 입력
+    DBPASS = # DB 패스워드 입력
 
     # Lambda TZ가 UTC이므로, KST에 해당하는 UTC+9로 맞춰주기
     KST_TIME = datetime.now() + timedelta(hours=9)
@@ -131,11 +130,6 @@ def lambda_handler(event, context):
             Student_Class = student_data[2]
             print("학생명은 " + Student_Name)
 
-        # 출석 온도(라즈베리파이 온도측정기능 확인시 변경할 것)
-        json_data = S3.get_object(Bucket=BUCKET_NAME, Key="TEMP-%s.json") % IMAGE_OBJECT_KEY
-        json_text = json.loads(json_data['Body'].read()) 
-        Check_In_Temp = json_text["Temp"]
-
         # 오늘 출석기록이 이미 존재하는가 확인
         select_check_in = ("SELECT * FROM check_in_out WHERE studentID=%s " 
                      "AND check_in_time LIKE '%s%%'" %(Student_Id, SYSTEM_TIME[:10]))
@@ -143,12 +137,12 @@ def lambda_handler(event, context):
         # 출석기록 없을 떄 insert 처리
         if check_in_result == 0:
             add_check = ("INSERT INTO check_in_out  "
-                           "(check_in_time, check_in_temp, studentID) "
-                           "VALUES ('%s', '%f', '%s')" %(SYSTEM_TIME, Check_In_Temp, Student_Id))
+                           "(check_in_time, studentID) "
+                           "VALUES ('%s', '%s')" %(SYSTEM_TIME, Student_Id))
             ci_cur.execute(add_check)
             CONN.commit()
 
-            RESULTS = "%s 님, 출석 완료되었습니다. %s 님의 온도는 %f입니다." % (Student_Name, Student_Name, Check_In_Temp)
+            RESULTS = "%s 님, 출석 완료되었습니다." % Student_Name
             MESSAGE = {
                 "Text": RESULTS
             }
@@ -237,18 +231,14 @@ def lambda_handler(event, context):
             else:
                 select_id = co_cur.fetchall()
                 Check_Id = select_id[-1][0]
-                json_data = S3.get_object(Bucket=BUCKET_NAME, Key="TEMP-%s.json") % IMAGE_OBJECT_KEY
-                json_text = json.loads(json_data['Body'].read()) 
-                Check_Out_Temp = json_text["Temp"]
                 update_check = ("UPDATE check_in_out "
                                 "SET check_out_time = '%s',"
-                                "check_out_temp = '%f' "
-                                "WHERE id = '%d'" % (SYSTEM_TIME, Check_Out_Temp, Check_Id))
+                                "WHERE id = '%d'" % (SYSTEM_TIME, Check_Id))
                 co_cur.execute(update_check)
                 CONN.commit()
 
                 print("퇴실기록 등록이 완료되었습니다.")
-                RESULTS = "%s 님, 퇴실 완료되었습니다. %s 님의 온도는 %f입니다." % (Student_Name, Student_Name, Check_Out_Temp)
+                RESULTS = "%s 님, 퇴실 완료되었습니다." % Student_Name
                 MESSAGE = {
                     "Text": RESULTS
                 }
